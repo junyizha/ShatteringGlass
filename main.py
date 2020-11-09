@@ -9,9 +9,7 @@ class Node:
         self._mass = mass
         self._pos = pos
         self._momentum = momentum
-
-    def visualize(self):
-        sphere(pos=self._pos, radius=10, color=color.red)
+        self._ball = sphere(pos=self._pos, radius=10, color=color.red)
 
     def getMass(self):
         return self._mass
@@ -24,6 +22,12 @@ class Node:
 
     def setPos(self, pos):
         self._pos = pos
+
+    def setMomentum(self, momentum):
+        self._momentum = momentum
+
+    def getBall(self):
+        return self._ball
 
 
 # Constructing the object Bond
@@ -43,9 +47,7 @@ class Bond:
 class Floor:
     def __init__(self, altitude):
         self._altitude = altitude
-
-    def visualize(self):
-        box(pos=vector(0, self._altitude, 0), length=900, height=1, width=900)
+        self._box = box(pos=vector(0, self._altitude, 0), length=900, height=1, width=900, color=color.green)
 
 
 # Constructing the scene
@@ -58,23 +60,20 @@ nodesCoordinates = []
 bonds = []
 bondsCoordinates = []
 glassSize = [10, 10, 10]
-height = 10
+height = 50
 
 # Creating lattices
 for i in range(glassSize[0]):
     for j in range(glassSize[1]):
         for k in range(glassSize[2]):
-            nodes.append(Node(10, vector(20 * i, 20 * j + height, 20 * k), 0))
+            nodes.append(Node(10, vector(20 * i, 20 * j + height, 20 * k), vector(0, 0, 0)))
             nodesCoordinates.append([i, j, k])
-
-for i in nodes:
-    i.visualize()
 
 # limitshort = 0
 # limitlong = 0
 # for i in nodesCoordinates:
 #     for j in nodesCoordinates:
-#         if limitshort == 2 and limitshort == 12:
+#         if limitlong == 4 and limitshort == 12:
 #             limitshort = 0
 #             limitlong = 0
 #             break
@@ -91,19 +90,22 @@ for i in nodes:
 #                                   []))
 #                 bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
 #                 limitlong += 1
-#
+
 # for i in bonds:
 #     i.visualize()
 
-floor1 = Floor(0)
+floor = Floor(0)
 
 # force analysis
 t = 0
-dt = 0.1
+dt = 0.01
 gravity = 9.8
 while t < 100:
     t += dt
     for n in nodes:
+        if n.getPos().dot(vector(0, 1, 0)) <= 10:
+            n.setMomentum(-n.getMomentum())
         Fgravity = vector(0, -gravity * n.getMass(), 0)
-        velocity = Fgravity * dt / n.getMass()
-        n.setPos(velocity * dt)
+        n.setMomentum(Fgravity * dt + n.getMomentum())
+        n.setPos(n.getPos() + n.getMomentum() / n.getMass() * dt)
+        n.getBall().pos = n.getPos()
