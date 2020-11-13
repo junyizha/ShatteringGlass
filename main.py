@@ -37,11 +37,15 @@ class Bond:
         self._connectedNodes = connectedNodes
         self._pos = pos
         self._constants = constants
+        self._spring = cylinder(pos=self._connectedNodes[0].getPos(),
+                                axis=self._connectedNodes[1].getPos() - self._connectedNodes[0].getPos(),
+                                radius=0.5)
 
-    def visualize(self):
-        helix(pos=self._connectedNodes[0].getPos(),
-              axis=self._connectedNodes[1].getPos() - self._connectedNodes[0].getPos(),
-              radius=0.5, thickness=2, coils=1)
+    def getSpring(self):
+        return self._spring
+
+    def setPos(self, pos):
+        self._pos = pos
 
 
 class Floor:
@@ -91,8 +95,120 @@ for i in range(glassSize[0]):
 #                 bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
 #                 limitlong += 1
 
-# for i in bonds:
-#     i.visualize()
+# New bond creation
+for i in nodesCoordinates:
+    if ([i[0] + 1, i[1], i[2]] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] + 1, i[1], i[2]] not in bondsCoordinates) or
+             ([i[0] + 1, i[1], i[2], i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] + 1, i[1], i[2]])]],
+                          nodes[nodesCoordinates.index([i[0] + 1, i[1], i[2]])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1], i[2]])
+    if ([i[0], i[1] + 1, i[2]] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0], i[1] + 1, i[2]] not in bondsCoordinates) or
+             ([i[0], i[1] + 1, i[2], i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0], i[1] + 1, i[2]])]],
+                          nodes[nodesCoordinates.index([i[0], i[1] + 1, i[2]])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1] + 1, i[2]])
+    if ([i[0], i[1], i[2] + 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0], i[1], i[2] + 1] not in bondsCoordinates) or
+             ([i[0], i[1], i[2] + 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0], i[1], i[2] + 1])]],
+                          nodes[nodesCoordinates.index([i[0], i[1], i[2] + 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1], i[2] + 1])
+    if ([i[0] - 1, i[1], i[2]] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] - 1, i[1], i[2]] not in bondsCoordinates) or
+             ([i[0] - 1, i[1], i[2], i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] - 1, i[1], i[2]])]],
+                          nodes[nodesCoordinates.index([i[0] - 1, i[1], i[2]])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1], i[2]])
+    if ([i[0], i[1] - 1, i[2]] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0], i[1] - 1, i[2]] not in bondsCoordinates) or
+             ([i[0], i[1] - 1, i[2], i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0], i[1] - 1, i[2]])]],
+                          nodes[nodesCoordinates.index([i[0], i[1] - 1, i[2]])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1] - 1, i[2]])
+    if ([i[0], i[1], i[2] - 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0], i[1], i[2] - 1] not in bondsCoordinates) or
+             ([i[0], i[1], i[2] - 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0], i[1], i[2] - 1])]],
+                          nodes[nodesCoordinates.index([i[0], i[1], i[2] - 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1], i[2] - 1])
+    if ([i[0] + 1, i[1] + 1, i[2] + 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] + 1, i[1] + 1, i[2] + 1] not in bondsCoordinates) or
+             ([i[0] + 1, i[1] + 1, i[2] + 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] + 1])]],
+                          nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] + 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] + 1, i[2] + 1])
+    if ([i[0] + 1, i[1] + 1, i[2] - 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] + 1, i[1] + 1, i[2] - 1] not in bondsCoordinates) or
+             ([i[0] + 1, i[1] + 1, i[2] - 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] - 1])]],
+                          nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] - 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] + 1, i[2] - 1])
+    if ([i[0] + 1, i[1] - 1, i[2] + 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] + 1, i[1] - 1, i[2] + 1] not in bondsCoordinates) or
+             ([i[0] + 1, i[1] - 1, i[2] + 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] + 1])]],
+                          nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] + 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] - 1, i[2] + 1])
+    if ([i[0] - 1, i[1] + 1, i[2] + 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] - 1, i[1] + 1, i[2] + 1] not in bondsCoordinates) or
+             ([i[0] - 1, i[1] + 1, i[2] + 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] + 1])]],
+                          nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] + 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] + 1, i[2] + 1])
+    if ([i[0] - 1, i[1] - 1, i[2] + 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] - 1, i[1] - 1, i[2] + 1] not in bondsCoordinates) or
+             ([i[0] - 1, i[1] - 1, i[2] + 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] + 1])]],
+                          nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] + 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] - 1, i[2] + 1])
+    if ([i[0] + 1, i[1] - 1, i[2] - 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] + 1, i[1] - 1, i[2] - 1] not in bondsCoordinates) or
+             ([i[0] + 1, i[1] - 1, i[2] - 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] - 1])]],
+                          nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] - 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] - 1, i[2] - 1])
+    if ([i[0] - 1, i[1] + 1, i[2] - 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] - 1, i[1] + 1, i[2] - 1] not in bondsCoordinates) or
+             ([i[0] - 1, i[1] + 1, i[2] - 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] - 1])]],
+                          nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] - 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] + 1, i[2] - 1])
+    if ([i[0] - 1, i[1] - 1, i[2] - 1] in nodesCoordinates) and \
+            (([i[0], i[1], i[2], i[0] - 1, i[1] - 1, i[2] - 1] not in bondsCoordinates) or
+             ([i[0] - 1, i[1] - 1, i[2] - 1, i[0], i[1], i[2]] not in bondsCoordinates)):
+        bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
+                           nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] - 1])]],
+                          nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] - 1])].getPos() - nodes[
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+        bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] - 1, i[2] - 1])
 
 floor = Floor(0)
 
@@ -103,9 +219,22 @@ gravity = 9.8
 while t < 100:
     t += dt
     for n in nodes:
-        if n.getPos().dot(vector(0, 1, 0)) <= 10:
-            n.setMomentum(-n.getMomentum())
+        # if n.getPos().dot(vector(0, 1, 0)) <= 10:
+        #     n.setMomentum(-n.getMomentum())
         Fgravity = vector(0, -gravity * n.getMass(), 0)
         n.setMomentum(Fgravity * dt + n.getMomentum())
         n.setPos(n.getPos() + n.getMomentum() / n.getMass() * dt)
         n.getBall().pos = n.getPos()
+        # for j in range(len(bonds)):
+        #     if bondsCoordinates[j][0] == nodesCoordinates[nodes.index(n)][0] \
+        #             and bondsCoordinates[j][1] == nodesCoordinates[nodes.index(n)][1] and \
+        #             bondsCoordinates[j][2] == nodesCoordinates[nodes.index(n)][2]:
+        #         bonds[j].getSpring().pos = nodes[nodesCoordinates.index([bondsCoordinates[j][3],
+        #                                                                  bondsCoordinates[j][4],
+        #                                                                  bondsCoordinates[j][5]])].getPos() - n.getPos()
+        #     elif bondsCoordinates[j][3] == nodesCoordinates[nodes.index(n)][0] \
+        #             and bondsCoordinates[j][4] == nodesCoordinates[nodes.index(n)][1] and \
+        #             bondsCoordinates[j][5] == nodesCoordinates[nodes.index(n)][2]:
+        #         bonds[j].getSpring().pos = n.getPos() - nodes[nodesCoordinates.index([bondsCoordinates[j][0],
+        #                                                                               bondsCoordinates[j][1],
+        #                                                                               bondsCoordinates[j][2]])].getPos()
