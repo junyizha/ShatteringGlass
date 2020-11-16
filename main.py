@@ -3,7 +3,9 @@ from numpy import *
 from math import *
 
 
+#
 # Constructing the object Node
+#
 class Node:
     def __init__(self, mass, pos, momentum):
         self._mass = mass
@@ -30,7 +32,9 @@ class Node:
         return self._ball
 
 
+#
 # Constructing the object Bond
+#
 class Bond:
     def __init__(self, connectedNodes, pos, constants):
         # connectedNodes is a tuple, constants is an array
@@ -54,11 +58,14 @@ class Floor:
         self._box = box(pos=vector(0, self._altitude, 0), length=900, height=1, width=900, color=color.green)
 
 
+#
 # Constructing the scene
+#
 scene2 = canvas(title="Illustration of node", caption="Animated Display", center=vector(0, 0, 0),
                 background=color.black)
-
+#
 # Some basic variables
+#
 nodes = []
 nodesCoordinates = []
 bonds = []
@@ -66,7 +73,9 @@ bondsCoordinates = []
 glassSize = [10, 10, 10]
 height = 50
 
+#
 # Creating lattices
+#
 for i in range(glassSize[0]):
     for j in range(glassSize[1]):
         for k in range(glassSize[2]):
@@ -95,7 +104,9 @@ for i in range(glassSize[0]):
 #                 bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
 #                 limitlong += 1
 
+#
 # New bond creation
+#
 for i in nodesCoordinates:
     if ([i[0] + 1, i[1], i[2]] in nodesCoordinates) and \
             (([i[0], i[1], i[2], i[0] + 1, i[1], i[2]] not in bondsCoordinates) or
@@ -212,7 +223,9 @@ for i in nodesCoordinates:
 
 floor = Floor(0)
 
+#
 # force analysis
+#
 t = 0
 dt = 0.01
 gravity = 9.8
