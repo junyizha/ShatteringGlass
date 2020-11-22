@@ -3,15 +3,18 @@ from numpy import *
 from math import *
 
 
+def almostEqual(d1, d2, epsilon=10**-7):
+    return (abs(d2 - d1) < epsilon)
+
 #
 # Constructing the object Node
 #
 class Node:
-    def __init__(self, mass, pos, momentum):
+    def __init__(self, mass, pos, velocity):
         self._mass = mass
         self._pos = pos
-        self._momentum = momentum
-        self._ball = sphere(pos=self._pos, radius=10, color=color.red)
+        self._velocity = velocity
+        self._ball = sphere(pos=self._pos, radius=bondConstants[0] / 2, color=color.red)
 
     def getMass(self):
         return self._mass
@@ -19,14 +22,14 @@ class Node:
     def getPos(self):
         return self._pos
 
-    def getMomentum(self):
-        return self._momentum
+    def getVelocity(self):
+        return self._velocity
 
     def setPos(self, pos):
         self._pos = pos
 
-    def setMomentum(self, momentum):
-        self._momentum = momentum
+    def setVelocity(self, velocity):
+        self._velocity = velocity
 
     def getBall(self):
         return self._ball
@@ -43,7 +46,7 @@ class Bond:
         self._constants = constants
         self._spring = cylinder(pos=self._connectedNodes[0].getPos(),
                                 axis=self._connectedNodes[1].getPos() - self._connectedNodes[0].getPos(),
-                                radius=0.5)
+                                radius=0.0001)
 
     def getConnectedNodes(self):
         return self._connectedNodes
@@ -58,7 +61,7 @@ class Bond:
 class Floor:
     def __init__(self, altitude):
         self._altitude = altitude
-        self._box = box(pos=vector(0, self._altitude, 0), length=900, height=1, width=900, color=color.green)
+        self._box = box(pos=vector(0, self._altitude, 0), length=9, height=0.001, width=9, color=color.green)
 
 
 #
@@ -75,8 +78,9 @@ nodesCoordinates = []
 bonds = []
 bondsCoordinates = []
 glassSize = [3, 3, 3]
-height = 100
-bondConstants = [20, 9999, False]  # length, spring constant, isBroken
+nodeMass = 0.0001
+height = 0.02
+bondConstants = [0.01 / 3, 0.0001, False]  # length, spring constant, isBroken
 
 #
 # Creating lattices
@@ -84,7 +88,8 @@ bondConstants = [20, 9999, False]  # length, spring constant, isBroken
 for i in range(glassSize[0]):
     for j in range(glassSize[1]):
         for k in range(glassSize[2]):
-            nodes.append(Node(10, vector(20 * i, 20 * j + height, 20 * k), vector(0, 0, 0)))
+            nodes.append(Node(nodeMass, vector(bondConstants[0] * i, bondConstants[0] * j + height,
+                                               bondConstants[0] * k), vector(0, 0, 0)))
             nodesCoordinates.append([i, j, k])
 
 #
@@ -121,7 +126,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] + 1, i[1], i[2]])]],
                           nodes[nodesCoordinates.index([i[0] + 1, i[1], i[2]])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1], i[2]])
 
     if ([i[0], i[1] + 1, i[2]] in nodesCoordinates) and (
@@ -129,7 +134,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0], i[1] + 1, i[2]])]],
                           nodes[nodesCoordinates.index([i[0], i[1] + 1, i[2]])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1] + 1, i[2]])
 
     if ([i[0], i[1], i[2] + 1] in nodesCoordinates) and (
@@ -137,7 +142,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0], i[1], i[2] + 1])]],
                           nodes[nodesCoordinates.index([i[0], i[1], i[2] + 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1], i[2] + 1])
 
     if ([i[0] - 1, i[1], i[2]] in nodesCoordinates) and (
@@ -145,7 +150,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] - 1, i[1], i[2]])]],
                           nodes[nodesCoordinates.index([i[0] - 1, i[1], i[2]])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1], i[2]])
 
     if ([i[0], i[1] - 1, i[2]] in nodesCoordinates) and (
@@ -153,7 +158,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0], i[1] - 1, i[2]])]],
                           nodes[nodesCoordinates.index([i[0], i[1] - 1, i[2]])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1] - 1, i[2]])
 
     if ([i[0], i[1], i[2] - 1] in nodesCoordinates) and (
@@ -161,7 +166,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0], i[1], i[2] - 1])]],
                           nodes[nodesCoordinates.index([i[0], i[1], i[2] - 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0], i[1], i[2] - 1])
 
     if ([i[0] + 1, i[1] + 1, i[2] + 1] in nodesCoordinates) and (
@@ -169,7 +174,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] + 1])]],
                           nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] + 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] + 1, i[2] + 1])
 
     if ([i[0] + 1, i[1] + 1, i[2] - 1] in nodesCoordinates) and (
@@ -177,7 +182,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] - 1])]],
                           nodes[nodesCoordinates.index([i[0] + 1, i[1] + 1, i[2] - 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] + 1, i[2] - 1])
 
     if ([i[0] + 1, i[1] - 1, i[2] + 1] in nodesCoordinates) and (
@@ -185,7 +190,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] + 1])]],
                           nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] + 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] - 1, i[2] + 1])
 
     if ([i[0] - 1, i[1] + 1, i[2] + 1] in nodesCoordinates) and (
@@ -193,7 +198,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] + 1])]],
                           nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] + 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] + 1, i[2] + 1])
 
     if ([i[0] - 1, i[1] - 1, i[2] + 1] in nodesCoordinates) and (
@@ -201,7 +206,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] + 1])]],
                           nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] + 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] - 1, i[2] + 1])
 
     if ([i[0] + 1, i[1] - 1, i[2] - 1] in nodesCoordinates) and (
@@ -209,7 +214,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] - 1])]],
                           nodes[nodesCoordinates.index([i[0] + 1, i[1] - 1, i[2] - 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] + 1, i[1] - 1, i[2] - 1])
 
     if ([i[0] - 1, i[1] + 1, i[2] - 1] in nodesCoordinates) and (
@@ -217,7 +222,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] - 1])]],
                           nodes[nodesCoordinates.index([i[0] - 1, i[1] + 1, i[2] - 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] + 1, i[2] - 1])
 
     if ([i[0] - 1, i[1] - 1, i[2] - 1] in nodesCoordinates) and (
@@ -225,7 +230,7 @@ for i in nodesCoordinates:
         bonds.append(Bond([nodes[nodesCoordinates.index([i[0], i[1], i[2]])],
                            nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] - 1])]],
                           nodes[nodesCoordinates.index([i[0] - 1, i[1] - 1, i[2] - 1])].getPos() - nodes[
-                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), []))
+                              nodesCoordinates.index([i[0], i[1], i[2]])].getPos(), bondConstants))
         bondsCoordinates.append([i[0], i[1], i[2], i[0] - 1, i[1] - 1, i[2] - 1])
 
 floor = Floor(0)
@@ -244,12 +249,13 @@ floor = Floor(0)
 # force analysis
 #
 t = 0
-dt = 0.00001
+dt = 0.001
 gravity = 9.8
-Fgravity = vector(0, -gravity * 10, 0)
-Fspring = vector(0, 0, 0)
+Fnet = vector(0, -gravity * nodeMass, 0)
+acceleration = Fnet / nodeMass
 
 while t < 25:
+    sleep(0.1)
     t += dt
     for n in nodes:
         X = nodesCoordinates[nodes.index(n)][0]
@@ -262,29 +268,37 @@ while t < 25:
                      [X, Y, Z, X + 1, Y + 1, Z - 1], [X, Y, Z, X - 1, Y + 1, Z + 1], [X, Y, Z, X - 1, Y - 1, Z + 1],
                      [X, Y, Z, X - 1, Y + 1, Z - 1], [X, Y, Z, X - 1, Y - 1, Z - 1], [X, Y, Z, X + 1, Y - 1, Z - 1]]
 
-        if n.getPos().dot(vector(0, 1, 0)) <= 10:
-            n.setMomentum(-n.getMomentum())
+        if n.getPos().dot(vector(0, 1, 0)) <= bondConstants[0]/2:
+            n.setVelocity(-n.getVelocity() * 0.8)
         # for m in nodes:
         #     if abs(mag(n.getPos()) - mag(m.getPos())) >= 0.1 and mag(n.getPos())**2 + mag(m.getPos())**2 < 99.9:
         #         n.setMomentum(-n.getMomentum())
         #         m.setMomentum(-m.getMomentum())
-        for j in tempnodes:
-            if j in bondsCoordinates:
-                if (abs((j[0]-j[3]))+abs((j[1]-j[4]))+abs((j[2]-j[5]))) == 1:
-                    cNodes = bonds[bondsCoordinates.index(j)].getConnectedNodes()
-                    springLength = n.getPos() - cNodes[1].getPos()
-                    Fspring += (bondConstants[0] * norm(springLength) - springLength) * bondConstants[1]
-                else:
-                    cNodes = bonds[bondsCoordinates.index(j)].getConnectedNodes()
-                    springLength = n.getPos() - cNodes[1].getPos()
-                    Fspring += (sqrt(3) * bondConstants[0] * norm(springLength) - springLength) * bondConstants[1]
-        n.setMomentum(n.getMomentum() + Fgravity * dt + Fspring * dt)
-        n.setPos(n.getPos() + n.getMomentum() / n.getMass() * dt)  # update position
+        # for j in tempnodes:
+        #     if j in bondsCoordinates:
+        #         #if (abs((j[0] - j[3])) + abs((j[1] - j[4])) + abs((j[2] - j[5]))) == 1:
+        #         if almostEqual((abs((j[0] - j[3])) + abs((j[1] - j[4])) + abs((j[2] - j[5]))), 1, epsilon=10**-7):
+        #             cNodes = bonds[bondsCoordinates.index(j)].getConnectedNodes()
+        #             springLength = n.getPos() - cNodes[1].getPos()
+        #             Fnet += (bondConstants[0] * norm(springLength) - springLength) * bondConstants[1]
+                # else:
+                #     cNodes = bonds[bondsCoordinates.index(j)].getConnectedNodes()
+                #     springLength = n.getPos() - cNodes[1].getPos()
+                #     Fnet += (sqrt(3) * bondConstants[0] * norm(springLength) - springLength) * bondConstants[1]
+
+        if n.getPos().dot(vector(0, 1, 0)) <= bondConstants[0] / 2:
+            Fnet += norm(vector(0, 1, 0)) * (bondConstants[0] - n.getPos().dot(vector(0, 1, 0))) * 9999
+        n.setPos(n.getPos() + n.getVelocity() * dt + 0.5 * acceleration * dt ** 2)  # update position
         n.getBall().pos = n.getPos()  # visualization step
 
+        newAcceleration = Fnet / nodeMass
+        n.setVelocity(n.getVelocity() + 0.5 * (acceleration + newAcceleration) * dt)  # update velocity
+
+        acceleration = newAcceleration
+        Fnet = vector(0, -gravity * nodeMass, 0)
+
         for j in tempnodes:
             if j in bondsCoordinates:
-                bonds[bondsCoordinates.index(j)].getSpring().axis = nodes[nodesCoordinates.index([j[0], j[1], j[2]])].getPos() - n.getPos()
+                bonds[bondsCoordinates.index(j)].getSpring().axis = nodes[nodesCoordinates.index(
+                    [j[3], j[4], j[5]])].getPos() - n.getPos()
                 bonds[bondsCoordinates.index(j)].getSpring().pos = n.getPos()
-
-
