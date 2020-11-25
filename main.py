@@ -68,7 +68,6 @@ class Bond:
         stretch = (mag(self._connectedNodes[0].getPos() - self._connectedNodes[1].getPos())) - self._constants[0]
         Fspring = self._constants[1] * stretch
         self._constants[2] = Fspring
-        print(stretch)
         return Fspring
 
 
@@ -116,7 +115,7 @@ limitshort = 0
 limitlong = 0
 for i in nodesCoordinates:
     for j in nodesCoordinates:
-        if limitlong == 4 and limitshort == 12:
+        if limitlong == 4 or limitshort == 12:
             limitshort = 0
             limitlong = 0
             break
@@ -127,12 +126,12 @@ for i in nodesCoordinates:
                                   bondConstants))
                 bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
                 limitshort += 1
-            elif (j[0] - i[0]) ** 2 + (j[1] - i[1]) ** 2 + (j[2] - i[2]) ** 2 == 3:
-                bonds.append(Bond([nodes[nodesCoordinates.index(i)], nodes[nodesCoordinates.index(j)]],
-                                  nodes[nodesCoordinates.index(j)].getPos() - nodes[nodesCoordinates.index(i)].getPos(),
-                                  bondConstants))
-                bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
-                limitlong += 1
+            # elif (j[0] - i[0]) ** 2 + (j[1] - i[1]) ** 2 + (j[2] - i[2]) ** 2 == 3:
+            #     bonds.append(Bond([nodes[nodesCoordinates.index(i)], nodes[nodesCoordinates.index(j)]],
+            #                       nodes[nodesCoordinates.index(j)].getPos() - nodes[nodesCoordinates.index(i)].getPos(),
+            #                       bondConstants))
+            #     bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
+            #     limitlong += 1
 
 
 #
@@ -267,11 +266,12 @@ floor = Floor(0)
 # force analysis
 #
 t = 0
-dt = 0.00001
+dt = 0.000001
 gravity = 9.8
 Fnet = vector(0, -gravity * nodeMass, 0)
 acceleration = Fnet / nodeMass
 forceTemp = []
+forceIndex = []
 
 # while t < 25:
 #     sleep(0.1)
@@ -323,13 +323,14 @@ forceTemp = []
 #                 bonds[bondsCoordinates.index(j)].getSpring().pos = n.getPos()
 
 while t < 25:
-    # sleep(1)
+    # sleep(.000001)
     t += dt
     for i in range(len(bonds)):
-        springForce = bonds[i].computeForce()
-        # print(springForce)
+        springForce = bondConstants[1] * (mag(bonds[i].getConnectedNodes()[0].getPos() - bonds[i].getConnectedNodes()[1].getPos()) - bondConstants[0])
+        # springForce = bonds[i].computeForce()
         forceTemp.append(springForce)
-        bonds[i].setConstants([bonds[i].getConstants()[0], bonds[i].getConstants()[1], forceTemp[i], bonds[i].getConstants()[3]])
+        forceIndex.append(bonds[i])
+        # bonds[i].setConstants([bonds[i].getConstants()[0], bonds[i].getConstants()[1], forceTemp[i], bonds[i].getConstants()[3]])
 
     for j in nodes:
         X = nodesCoordinates[nodes.index(j)][0]
@@ -343,16 +344,20 @@ while t < 25:
             if s in bondsCoordinates:
                 tempbond = bonds[bondsCoordinates.index(s)]
                 tempbond.getSpring().axis = nodes[nodesCoordinates.index([s[3], s[4], s[5]])].getPos() - j.getPos()
-                bonds[bondsCoordinates.index(s)].getSpring().pos = j.getPos()
-                # print(bonds[bondsCoordinates.index(s)].getConstants()[2])
-                Fnet += bonds[bondsCoordinates.index(s)].getConstants()[2] * norm(tempbond.getSpring().axis)
+                tempbond.getSpring().pos = j.getPos()
+                Fnet += forceTemp[forceIndex.index(tempbond)] * norm(nodes[nodesCoordinates.index([s[3], s[4], s[5]])].getPos() - j.getPos())
+                # Fnet += bonds[bondsCoordinates.index(s)].getConstants()[2] * norm(tempbond.getSpring().axis)
 
         if j.getPos().dot(vector(0, 1, 0)) <= bondConstants[0] / 2:
-            j.setVelocity(-j.getVelocity())
-
+            j.setVelocity(0 - 0.5 * j.getVelocity())
+        # print(Fnet)
+        # j.setPos(j.getPos() + j.getVelocity() * dt)
         j.setPos(j.getPos() + j.getVelocity() * dt + 0.5 * acceleration * (dt ** 2))  # update position
         j.getBall().pos = j.getPos()  # visualization step
         newAcceleration = Fnet / nodeMass
+        # j.setVelocity(j.getVelocity() + acceleration * dt)
         j.setVelocity(j.getVelocity() + 0.5 * (acceleration + newAcceleration) * dt)  # update velocity
+        print(j.getVelocity())
         acceleration = newAcceleration  # update acceleration
         Fnet = vector(0, -gravity * nodeMass, 0)
+    forceTemp = []
