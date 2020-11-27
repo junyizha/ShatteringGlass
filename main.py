@@ -64,11 +64,11 @@ class Bond:
     def setConstants(self, constants):
         self._constants = constants
 
-    def computeForce(self):
-        stretch = (mag(self._connectedNodes[0].getPos() - self._connectedNodes[1].getPos())) - self._constants[0]
-        Fspring = self._constants[1] * stretch
-        self._constants[2] = Fspring
-        return Fspring
+    # def computeForce(self):
+    #     stretch = (mag(self._connectedNodes[0].getPos() - self._connectedNodes[1].getPos())) - self._constants[0]
+    #     Fspring = self._constants[1] * stretch
+    #     self._constants[2] = Fspring
+    #     return Fspring
 
 
 #
@@ -83,7 +83,7 @@ class Floor:
 #
 # Constructing the scene
 #
-scene = canvas(title="Illustration of node", caption="Animated Display", center=vector(0, 0, 0),
+scene = canvas(title="Shattering Glass", caption="Animated Display", center=vector(0, 0, 0),
                 background=color.black)
 
 #
@@ -323,7 +323,7 @@ forceIndex = []
 #                 bonds[bondsCoordinates.index(j)].getSpring().pos = n.getPos()
 
 while t < 25:
-    # sleep(.000001)
+    sleep(.000001)
     t += dt
     for i in range(len(bonds)):
         springForce = bondConstants[1] * (mag(bonds[i].getConnectedNodes()[0].getPos() - bonds[i].getConnectedNodes()[1].getPos()) - bondConstants[0])
@@ -348,16 +348,18 @@ while t < 25:
                 Fnet += forceTemp[forceIndex.index(tempbond)] * norm(nodes[nodesCoordinates.index([s[3], s[4], s[5]])].getPos() - j.getPos())
                 # Fnet += bonds[bondsCoordinates.index(s)].getConstants()[2] * norm(tempbond.getSpring().axis)
 
-        if j.getPos().dot(vector(0, 1, 0)) <= bondConstants[0] / 2:
-            j.setVelocity(0 - 0.5 * j.getVelocity())
+        if Y == glassSize[1] - 1:
+            Fnet = vector(0, 0, 0)
+        # if j.getPos().dot(vector(0, 1, 0)) <= bondConstants[0] / 2:
+        #     j.setVelocity(vector(0, 0, 0) - j.getVelocity())
         # print(Fnet)
-        # j.setPos(j.getPos() + j.getVelocity() * dt)
-        j.setPos(j.getPos() + j.getVelocity() * dt + 0.5 * acceleration * (dt ** 2))  # update position
+        j.setPos(j.getPos() + j.getVelocity() * dt)
+        # j.setPos(j.getPos() + j.getVelocity() * dt + 0.5 * acceleration * (dt ** 2))  # update position
         j.getBall().pos = j.getPos()  # visualization step
         newAcceleration = Fnet / nodeMass
-        # j.setVelocity(j.getVelocity() + acceleration * dt)
-        j.setVelocity(j.getVelocity() + 0.5 * (acceleration + newAcceleration) * dt)  # update velocity
-        print(j.getVelocity())
+        j.setVelocity(j.getVelocity() + acceleration * dt)
+        # j.setVelocity(j.getVelocity() + 0.5 * (acceleration + newAcceleration) * dt)  # update velocity
+        # print(j.getVelocity())
         acceleration = newAcceleration  # update acceleration
         Fnet = vector(0, -gravity * nodeMass, 0)
     forceTemp = []
