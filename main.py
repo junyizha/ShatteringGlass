@@ -72,7 +72,8 @@ class Floor:
 
     def shortestDistance(self, posvector):
         d = abs((self._box.up.x * posvector.x + self._box.up.y * posvector.y + self._box.up.z * posvector.z))
-        e = (math.sqrt(self._box.up.x * self._box.up.x + self._box.up.y * self._box.up.y + self._box.up.z * self._box.up.z))
+        e = (math.sqrt(
+            self._box.up.x * self._box.up.x + self._box.up.y * self._box.up.y + self._box.up.z * self._box.up.z))
         return d / e
 
     def getNormalVector(self):
@@ -85,7 +86,6 @@ class Floor:
 scene = canvas(title="Shattering Glass", caption="Animated Display", center=vector(0, 0, 0),
                background=color.black)
 
-
 #
 # Some basic variables
 #
@@ -96,9 +96,8 @@ bondsCoordinates = []
 glassSize = [2, 2, 2]
 nodeMass = 0.0001
 height = 0.05
-bondConstants = [0.01 / 3, 9, 0, False]  # equilibrium length, spring constant, force, isBroken
-bondConstants2 = [0.01 / sqrt(3), 9 * sqrt(3), 0, False]  # for diagonal bonds
-
+bondConstants = [0.01 / 3, 999, 0, False]  # equilibrium length, spring constant, force, isBroken
+bondConstants2 = [0.01 / sqrt(3), 999 * sqrt(3), 0, False]  # for diagonal bonds
 
 #
 # Creating lattices
@@ -109,7 +108,6 @@ for i in range(glassSize[0]):
             nodes.append(Node(nodeMass, vector(bondConstants[0] * i, bondConstants[0] * j + height,
                                                bondConstants[0] * k), vector(0, 0, 0)))
             nodesCoordinates.append([i, j, k])
-
 
 #
 # Old bond creation
@@ -325,6 +323,8 @@ while t < 25:
             n.setVelocity(1.0 * (newProjectedY + projectedX))
 
         #
+        # Old floor collision
+        #
         # if n.getPos().y <= bondConstants[0] / 2:
         #     n.setVelocity(n.getVelocity() + (
         #                 vector(0, -gravity * nodeMass, 0) + vector(0, -(n.getPos().y - bondConstants[0] / 2) * 99999,
@@ -356,31 +356,32 @@ while t < 25:
     #
     # Mechanics of bonds
     #
-    for b in bonds:
-        start = b.getConnectedNodes()[0]
-        end = b.getConnectedNodes()[1]
-        b.getSpring().axis = end.getPos() - start.getPos()
-        b.getSpring().pos = start.getPos()  # visualization step
-        springStretch = mag(b.getSpring().axis) - b.getConstants()[0]
-        force = norm(b.getSpring().axis) * b.getConstants()[1] * springStretch
+    for b in range(len(bonds)):
+        if bonds[b].getConstants()[3]:
+            continue
+
+        start = bonds[b].getConnectedNodes()[0]
+        end = bonds[b].getConnectedNodes()[1]
+        bonds[b].getSpring().axis = end.getPos() - start.getPos()
+        bonds[b].getSpring().pos = start.getPos()  # visualization step
+        springStretch = mag(bonds[b].getSpring().axis) - bonds[b].getConstants()[0]
+        force = norm(bonds[b].getSpring().axis) * bonds[b].getConstants()[1] * springStretch
         # centerofmassVelocity = (start.getVelocity() + end.getVelocity()) / 2
         # start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.0 * norm(start.getVelocity()) * mag(
         #     start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
         # end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.0 * norm(end.getVelocity()) * mag(
         #     end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
 
-        centerofmassVelocity = (start.getVelocity() + end.getVelocity()) / 2
-        start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.0 * norm(start.getVelocity()) * mag(
-            start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
-        end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.0 * norm(end.getVelocity()) * mag(
-            end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
+        # zeta = 2 * sqrt(nodeMass / bonds[b].getConstants()[1])
+        # start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.5 * zeta * norm(start.getVelocity()) * mag(
+        #     start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
+        # end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.5 * zeta * norm(end.getVelocity()) * mag(
+        #     end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
 
-        if springStretch>=0.001:
-            b.setConstants([b.getConstants()[0],b.getConstants()[1],b.getConstants()[2],True])
-            bonds.remove(b)
-
-
-
+        if springStretch >= 0.001:
+            bonds[b].setConstants(
+                [bonds[b].getConstants()[0], bonds[b].getConstants()[1], bonds[b].getConstants()[2], True])
+            bonds[b].getSpring().visible = False
 
     #
     # Image Capture
