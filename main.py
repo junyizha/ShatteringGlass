@@ -67,7 +67,7 @@ class Bond:
 class Floor:
     def __init__(self, altitude):
         self._altitude = altitude
-        self._box = box(pos=vector(0, self._altitude, 0), up=norm(vector(0, 1, 0)), length=0.1, height=0.001,
+        self._box = box(pos=vector(0, self._altitude, 0), up=norm(vector(0.1, 1, 0)), length=0.4, height=0.001,
                         width=0.1, color=color.green)
 
     def shortestDistance(self, posvector):
@@ -85,6 +85,7 @@ class Floor:
 scene = canvas(title="Shattering Glass", caption="Animated Display", center=vector(0, 0, 0),
                background=color.black)
 
+
 #
 # Some basic variables
 #
@@ -92,11 +93,12 @@ nodes = []
 nodesCoordinates = []
 bonds = []
 bondsCoordinates = []
-glassSize = [3, 3, 3]
+glassSize = [2, 2, 2]
 nodeMass = 0.0001
 height = 0.05
-bondConstants = [0.01 / 3, 19, 0, False]  # equilibrium length, spring constant, force, isBroken
-bondConstants2 = [0.01 / sqrt(3), 19 * sqrt(3), 0, False]  # for diagonal bonds
+bondConstants = [0.01 / 3, 9, 0, False]  # equilibrium length, spring constant, force, isBroken
+bondConstants2 = [0.01 / sqrt(3), 9 * sqrt(3), 0, False]  # for diagonal bonds
+
 
 #
 # Creating lattices
@@ -107,6 +109,7 @@ for i in range(glassSize[0]):
             nodes.append(Node(nodeMass, vector(bondConstants[0] * i, bondConstants[0] * j + height,
                                                bondConstants[0] * k), vector(0, 0, 0)))
             nodesCoordinates.append([i, j, k])
+
 
 #
 # Old bond creation
@@ -267,13 +270,17 @@ floor = Floor(0)
 # force analysis
 #
 t = 0
-dt = 0.0001
+dt = 0.00001
 gravity = 9.8
-# isCollided = []
+count = 0
+isCollided = []
 
-# for i in range(len(nodes)):
-#     isCollided.append(False)
+for i in range(len(nodes)):
+    isCollided.append(False)
 
+#
+# Main While Loop
+#
 while t < 25:
     # sleep(.0000005)
     t += dt
@@ -281,35 +288,43 @@ while t < 25:
     #
     # Keyboard events
     #
-    k = keysdown()
-    if 'w' in k:
-        scene.camera.pos = scene.camera.pos + vector(0, .001, 0)
-        scene.forward = scene.center - scene.camera.pos
-    if 's' in k:
-        scene.camera.pos = scene.camera.pos - vector(0, .001, 0)
-        scene.forward = scene.center - scene.camera.pos
-    if 'd' in k:
-        scene.camera.pos = scene.camera.pos + vector(.001, 0, 0)
-        scene.forward = scene.center - scene.camera.pos
-    if 'a' in k:
-        scene.camera.pos = scene.camera.pos - vector(.001, 0, 0)
-        scene.forward = scene.center - scene.camera.pos
-    if 'h' in k:
-        scene.camera.pos = scene.camera.pos + vector(0, 0, .001)
-        scene.forward = scene.center - scene.camera.pos
-    if 'n' in k:
-        scene.camera.pos = scene.camera.pos - vector(0, 0, .001)
-        scene.forward = scene.center - scene.camera.pos
+    # k = keysdown()
+    # if 'w' in k:
+    #     scene.camera.pos = scene.camera.pos + vector(0, .001, 0)
+    #     scene.forward = scene.center - scene.camera.pos
+    # if 's' in k:
+    #     scene.camera.pos = scene.camera.pos - vector(0, .001, 0)
+    #     scene.forward = scene.center - scene.camera.pos
+    # if 'd' in k:
+    #     scene.camera.pos = scene.camera.pos + vector(.001, 0, 0)
+    #     scene.forward = scene.center - scene.camera.pos
+    # if 'a' in k:
+    #     scene.camera.pos = scene.camera.pos - vector(.001, 0, 0)
+    #     scene.forward = scene.center - scene.camera.pos
+    # if 'h' in k:
+    #     scene.camera.pos = scene.camera.pos + vector(0, 0, .001)
+    #     scene.forward = scene.center - scene.camera.pos
+    # if 'n' in k:
+    #     scene.camera.pos = scene.camera.pos - vector(0, 0, .001)
+    #     scene.forward = scene.center - scene.camera.pos
 
+    #
+    # Mechanics of nodes
+    #
     for n in nodes:
+
+        #
+        # Colliding with the floor
+        #
         if floor.shortestDistance(n.getPos()) <= bondConstants[0] / 2:
             # print(floor.shortestDistance(n.getPos()))
             projectedY = n.getVelocity().dot(floor.getNormalVector()) / mag(floor.getNormalVector()) * norm(
                 floor.getNormalVector())
             projectedX = n.getVelocity() - projectedY
-            newprojectedY = -projectedY
-            n.setVelocity(1.0*(newprojectedY + projectedX))
+            newProjectedY = -projectedY
+            n.setVelocity(1.0 * (newProjectedY + projectedX))
 
+        #
         # if n.getPos().y <= bondConstants[0] / 2:
         #     n.setVelocity(n.getVelocity() + (
         #                 vector(0, -gravity * nodeMass, 0) + vector(0, -(n.getPos().y - bondConstants[0] / 2) * 99999,
@@ -318,6 +333,10 @@ while t < 25:
         #     n.setVelocity(n.getVelocity() + vector(0, -gravity * nodeMass, 0) * dt / nodeMass)
 
         # n.setVelocity(vector(0, 0, 0) - n.getVelocity())
+
+        #
+        # Collision Detection
+        #
         # for m in nodes:
         #     if 0.000001 <= mag(n.getPos() - m.getPos()) < bondConstants[0] and not isCollided[nodes.index(m)]:
         #         isCollided[nodes.index(m)] = True
@@ -329,21 +348,46 @@ while t < 25:
         #         print("Collided")
         #         if (m.getPos() - n.getPos()).dot(n.getVelocity()) / mag(m.getPos() - n.getPos()) < 0:
         #             isCollided[nodes.index(m)] = False
+
         n.setVelocity(n.getVelocity() + vector(0, -gravity * nodeMass, 0) * dt / nodeMass)
         n.setPos(n.getPos() + n.getVelocity() * dt)
         n.getBall().pos = n.getPos()  # visualization step
 
+    #
+    # Mechanics of bonds
+    #
     for b in bonds:
         start = b.getConnectedNodes()[0]
         end = b.getConnectedNodes()[1]
         b.getSpring().axis = end.getPos() - start.getPos()
         b.getSpring().pos = start.getPos()  # visualization step
-        force = norm(b.getSpring().axis) * b.getConstants()[1] * (mag(b.getSpring().axis) - b.getConstants()[0])
-        # print(force)
+        springStretch = mag(b.getSpring().axis) - b.getConstants()[0]
+        force = norm(b.getSpring().axis) * b.getConstants()[1] * springStretch
+        # centerofmassVelocity = (start.getVelocity() + end.getVelocity()) / 2
+        # start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.0 * norm(start.getVelocity()) * mag(
+        #     start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
+        # end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.0 * norm(end.getVelocity()) * mag(
+        #     end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
+
         centerofmassVelocity = (start.getVelocity() + end.getVelocity()) / 2
         start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.0 * norm(start.getVelocity()) * mag(
             start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
         end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.0 * norm(end.getVelocity()) * mag(
             end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
+
+        if springStretch>=0.001:
+            b.setConstants([b.getConstants()[0],b.getConstants()[1],b.getConstants()[2],True])
+            bonds.remove(b)
+
+
+
+
+    #
+    # Image Capture
+    #
+    # count += 1
+    # if count == 1000:
+    #     scene.capture("test.png")
+    #     count = 0
 
 print("Completed.")
