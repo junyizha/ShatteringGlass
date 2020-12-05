@@ -86,6 +86,7 @@ class Floor:
 scene = canvas(title="Shattering Glass", caption="Animated Display", center=vector(0, 0, 0),
                background=color.black)
 
+
 #
 # Some basic variables
 #
@@ -96,8 +97,9 @@ bondsCoordinates = []
 glassSize = [2, 2, 2]
 nodeMass = 0.0001
 height = 0.05
-bondConstants = [0.01 / 3, 999, 0, False]  # equilibrium length, spring constant, force, isBroken
-bondConstants2 = [0.01 / sqrt(3), 999 * sqrt(3), 0, False]  # for diagonal bonds
+bondConstants = [0.01 / 3, 49, 0, False]  # equilibrium length, spring constant, force, isBroken
+bondConstants2 = [0.01 / sqrt(3), 49 * sqrt(3), 0, False]  # for diagonal bonds
+
 
 #
 # Creating lattices
@@ -108,6 +110,7 @@ for i in range(glassSize[0]):
             nodes.append(Node(nodeMass, vector(bondConstants[0] * i, bondConstants[0] * j + height,
                                                bondConstants[0] * k), vector(0, 0, 0)))
             nodesCoordinates.append([i, j, k])
+
 
 #
 # Old bond creation
@@ -276,6 +279,7 @@ isCollided = []
 for i in range(len(nodes)):
     isCollided.append(False)
 
+
 #
 # Main While Loop
 #
@@ -310,7 +314,6 @@ while t < 25:
     # Mechanics of nodes
     #
     for n in nodes:
-
         #
         # Colliding with the floor
         #
@@ -356,32 +359,33 @@ while t < 25:
     #
     # Mechanics of bonds
     #
-    for b in range(len(bonds)):
-        if bonds[b].getConstants()[3]:
+    for b in bonds:
+        if b.getConstants()[3]:
             continue
-
-        start = bonds[b].getConnectedNodes()[0]
-        end = bonds[b].getConnectedNodes()[1]
-        bonds[b].getSpring().axis = end.getPos() - start.getPos()
-        bonds[b].getSpring().pos = start.getPos()  # visualization step
-        springStretch = mag(bonds[b].getSpring().axis) - bonds[b].getConstants()[0]
-        force = norm(bonds[b].getSpring().axis) * bonds[b].getConstants()[1] * springStretch
+        start = b.getConnectedNodes()[0]
+        end = b.getConnectedNodes()[1]
+        b.getSpring().axis = end.getPos() - start.getPos()
+        b.getSpring().pos = start.getPos()  # visualization step
+        springStretch = mag(b.getSpring().axis) - b.getConstants()[0]
+        force = norm(b.getSpring().axis) * b.getConstants()[1] * springStretch
         # centerofmassVelocity = (start.getVelocity() + end.getVelocity()) / 2
         # start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.0 * norm(start.getVelocity()) * mag(
         #     start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
         # end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.0 * norm(end.getVelocity()) * mag(
         #     end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
 
-        # zeta = 2 * sqrt(nodeMass / bonds[b].getConstants()[1])
-        # start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.5 * zeta * norm(start.getVelocity()) * mag(
-        #     start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
-        # end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.5 * zeta * norm(end.getVelocity()) * mag(
-        #     end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
+        zeta = 2 * sqrt(nodeMass / b.getConstants()[1])
+        start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.5 * zeta * norm(start.getVelocity()) * mag(
+            start.getVelocity() - end.getVelocity()) * dt / nodeMass)
+        end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.5 * zeta * norm(end.getVelocity()) * mag(
+            end.getVelocity() - start.getVelocity()) * dt / nodeMass)
 
-        if springStretch >= 0.001:
-            bonds[b].setConstants(
-                [bonds[b].getConstants()[0], bonds[b].getConstants()[1], bonds[b].getConstants()[2], True])
-            bonds[b].getSpring().visible = False
+        #
+        # Breakage modelling
+        #
+        # if springStretch >= 0.0001:
+        #     b.setConstants([b.getConstants()[0], b.getConstants()[1], b.getConstants()[2], True])
+        #     b.getSpring().visible = False
 
     #
     # Image Capture
