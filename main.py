@@ -44,6 +44,7 @@ class Bond:
         self._spring = cylinder(pos=self._connectedNodes[0].getPos(),
                                 axis=self._connectedNodes[1].getPos() - self._connectedNodes[0].getPos(),
                                 radius=0.0001)
+        self._lastforce = vector(0, 0, 0)
 
     def getConnectedNodes(self):
         return self._connectedNodes
@@ -60,6 +61,12 @@ class Bond:
     def setConstants(self, constants):
         self._constants = constants
 
+    def getlastForce(self):
+        return self._lastforce
+
+    def setlastForce(self, inputforce):
+        self._lastforce = inputforce
+
 
 #
 # Constructing the object Floor
@@ -67,7 +74,7 @@ class Bond:
 class Floor:
     def __init__(self, altitude):
         self._altitude = altitude
-        self._box = box(pos=vector(0, self._altitude, 0), up=norm(vector(0.1, 1, 0)), length=0.4, height=0.001,
+        self._box = box(pos=vector(0, self._altitude, 0), up=norm(vector(0, 1, 0)), length=0.4, height=0.001,
                         width=0.1, color=color.green)
 
     def shortestDistance(self, posvector):
@@ -86,7 +93,6 @@ class Floor:
 scene = canvas(title="Shattering Glass", caption="Animated Display", center=vector(0, 0, 0),
                background=color.black)
 
-
 #
 # Some basic variables
 #
@@ -94,12 +100,11 @@ nodes = []
 nodesCoordinates = []
 bonds = []
 bondsCoordinates = []
-glassSize = [2, 2, 2]
+glassSize = [1, 10, 1]
 nodeMass = 0.0001
 height = 0.05
-bondConstants = [0.01 / 3, 49, 0, False]  # equilibrium length, spring constant, force, isBroken
-bondConstants2 = [0.01 / sqrt(3), 49 * sqrt(3), 0, False]  # for diagonal bonds
-
+bondConstants = [0.01 / 3, 99, 0, False]  # equilibrium length, spring constant, force, isBroken
+bondConstants2 = [0.01 / sqrt(3), 99 * sqrt(3), 0, False]  # for diagonal bonds
 
 #
 # Creating lattices
@@ -108,35 +113,8 @@ for i in range(glassSize[0]):
     for j in range(glassSize[1]):
         for k in range(glassSize[2]):
             nodes.append(Node(nodeMass, vector(bondConstants[0] * i, bondConstants[0] * j + height,
-                                               bondConstants[0] * k), vector(0, 0, 0)))
+                                               bondConstants[0] * k), vector(0, 0, 0)), )
             nodesCoordinates.append([i, j, k])
-
-
-#
-# Old bond creation
-#
-# limitshort = 0
-# limitlong = 0
-# for i in nodesCoordinates:
-#     for j in nodesCoordinates:
-#         # if limitlong == 4 or limitshort == 12:
-#         #     limitshort = 0
-#         #     limitlong = 0
-#         #     break
-#         if nodesCoordinates.index(i) < nodesCoordinates.index(j):
-#             if (j[0] - i[0]) ** 2 + (j[1] - i[1]) ** 2 + (j[2] - i[2]) ** 2 == 1:
-#                 bonds.append(Bond([nodes[nodesCoordinates.index(i)], nodes[nodesCoordinates.index(j)]],
-#                                   nodes[nodesCoordinates.index(j)].getPos() - nodes[nodesCoordinates.index(i)].getPos(),
-#                                   bondConstants))
-#                 bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
-#                 limitshort += 1
-#             elif (j[0] - i[0]) ** 2 + (j[1] - i[1]) ** 2 + (j[2] - i[2]) ** 2 == 3:
-#                 bonds.append(Bond([nodes[nodesCoordinates.index(i)], nodes[nodesCoordinates.index(j)]],
-#                                   nodes[nodesCoordinates.index(j)].getPos() - nodes[nodesCoordinates.index(i)].getPos(),
-#                                   bondConstants2))
-#                 bondsCoordinates.append([i[0], i[1], i[2], j[0], j[1], j[2]])
-#                 limitlong += 1
-
 
 #
 # New bond creation
@@ -256,17 +234,6 @@ for i in nodesCoordinates:
 
 floor = Floor(0)
 
-# test = False
-# for i in range(len(bondsCoordinates)):
-#     for j in range(i + 1, len(bondsCoordinates)):
-#         if i == j:
-#             print(i)
-#             test = True
-#
-# print(bondsCoordinates)
-# print(test)
-
-
 #
 # force analysis
 #
@@ -275,10 +242,10 @@ dt = 0.00001
 gravity = 9.8
 count = 0
 isCollided = []
+oldAcceleration = vector(0, -gravity, 0)
 
 for i in range(len(nodes)):
     isCollided.append(False)
-
 
 #
 # Main While Loop
@@ -314,11 +281,11 @@ while t < 25:
     # Mechanics of nodes
     #
     for n in nodes:
+        nCoordinates = nodesCoordinates[nodes.index(n)]
         #
         # Colliding with the floor
         #
         if floor.shortestDistance(n.getPos()) <= bondConstants[0] / 2:
-            # print(floor.shortestDistance(n.getPos()))
             projectedY = n.getVelocity().dot(floor.getNormalVector()) / mag(floor.getNormalVector()) * norm(
                 floor.getNormalVector())
             projectedX = n.getVelocity() - projectedY
@@ -326,35 +293,39 @@ while t < 25:
             n.setVelocity(1.0 * (newProjectedY + projectedX))
 
         #
-        # Old floor collision
-        #
-        # if n.getPos().y <= bondConstants[0] / 2:
-        #     n.setVelocity(n.getVelocity() + (
-        #                 vector(0, -gravity * nodeMass, 0) + vector(0, -(n.getPos().y - bondConstants[0] / 2) * 99999,
-        #                                                            0)) * dt / nodeMass)
-        # else:
-        #     n.setVelocity(n.getVelocity() + vector(0, -gravity * nodeMass, 0) * dt / nodeMass)
-
-        # n.setVelocity(vector(0, 0, 0) - n.getVelocity())
-
-        #
         # Collision Detection
         #
-        # for m in nodes:
-        #     if 0.000001 <= mag(n.getPos() - m.getPos()) < bondConstants[0] and not isCollided[nodes.index(m)]:
-        #         isCollided[nodes.index(m)] = True
-        #         distance = mag(m.getPos() - n.getPos())
-        #         vCenterN = (m.getPos() - n.getPos()).dot(n.getVelocity()) / distance * norm(m.getPos() - n.getPos())
-        #         vCenterM = (n.getPos() - m.getPos()).dot(m.getVelocity()) / distance * norm(n.getPos() - m.getPos())
-        #         n.setVelocity(n.getVelocity() - vCenterN + vCenterM)
-        #         m.setVelocity(m.getVelocity() - vCenterM + vCenterN)
-        #         print("Collided")
-        #         if (m.getPos() - n.getPos()).dot(n.getVelocity()) / mag(m.getPos() - n.getPos()) < 0:
-        #             isCollided[nodes.index(m)] = False
+        for m in nodes:
+            mCoordinates = nodesCoordinates[nodes.index(m)]
+            connected = False
+            if [nCoordinates[0], nCoordinates[1], nCoordinates[2], mCoordinates[0], mCoordinates[1],
+                mCoordinates[2]] in bondsCoordinates:
+                mnCoordinates = [nCoordinates[0], nCoordinates[1], nCoordinates[2], mCoordinates[0], mCoordinates[1],
+                                 mCoordinates[2]]
+                connected = True
+            elif [mCoordinates[0], mCoordinates[1], mCoordinates[2], nCoordinates[0], nCoordinates[1],
+                  nCoordinates[2]] in bondsCoordinates:
+                mnCoordinates = [mCoordinates[0], mCoordinates[1], mCoordinates[2], nCoordinates[0], nCoordinates[1],
+                                 nCoordinates[2]]
+                connected = True
+            if (not connected or connected and bonds[bondsCoordinates.index(mnCoordinates)].getConstants()[3]) and \
+                    0.000001 <= mag(n.getPos() - m.getPos()) < bondConstants[0] and not isCollided[nodes.index(m)]:
+                isCollided[nodes.index(m)] = True
+                distance = mag(m.getPos() - n.getPos())
+                vCenterN = (m.getPos() - n.getPos()).dot(n.getVelocity()) / distance * norm(m.getPos() - n.getPos())
+                vCenterM = (n.getPos() - m.getPos()).dot(m.getVelocity()) / distance * norm(n.getPos() - m.getPos())
+                n.setVelocity(n.getVelocity() - vCenterN + vCenterM)
+                m.setVelocity(m.getVelocity() - vCenterM + vCenterN)
+                if (m.getPos() - n.getPos()).dot(n.getVelocity()) / mag(m.getPos() - n.getPos()) < 0:
+                    isCollided[nodes.index(m)] = False
 
-        n.setVelocity(n.getVelocity() + vector(0, -gravity * nodeMass, 0) * dt / nodeMass)
-        n.setPos(n.getPos() + n.getVelocity() * dt)
+        n.setVelocity(n.getVelocity() + 0.5 * dt * (oldAcceleration))
+        n.setPos(n.getPos() + dt * n.getVelocity())
         n.getBall().pos = n.getPos()  # visualization step
+        n.setVelocity(n.getVelocity() + 0.5 * dt * (oldAcceleration))
+        # n.setVelocity(n.getVelocity() + vector(0, -gravity * nodeMass, 0) * dt / nodeMass)
+        # n.setPos(n.getPos() + n.getVelocity() * dt)
+        # n.getBall().pos = n.getPos()  # visualization step
 
     #
     # Mechanics of bonds
@@ -362,30 +333,40 @@ while t < 25:
     for b in bonds:
         if b.getConstants()[3]:
             continue
+
         start = b.getConnectedNodes()[0]
         end = b.getConnectedNodes()[1]
         b.getSpring().axis = end.getPos() - start.getPos()
         b.getSpring().pos = start.getPos()  # visualization step
         springStretch = mag(b.getSpring().axis) - b.getConstants()[0]
         force = norm(b.getSpring().axis) * b.getConstants()[1] * springStretch
-        # centerofmassVelocity = (start.getVelocity() + end.getVelocity()) / 2
-        # start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.0 * norm(start.getVelocity()) * mag(
-        #     start.getVelocity() - centerofmassVelocity) * dt / nodeMass)
-        # end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.0 * norm(end.getVelocity()) * mag(
-        #     end.getVelocity() - centerofmassVelocity) * dt / nodeMass)
 
+        # zeta = 2 * sqrt(nodeMass / b.getConstants()[1])
+        # start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.5 * zeta * norm(start.getVelocity()) * mag(
+        #     start.getVelocity() - end.getVelocity()) * dt / nodeMass)
+        # end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.5 * zeta * norm(end.getVelocity()) * mag(
+        #     end.getVelocity() - start.getVelocity()) * dt / nodeMass)
+        if t == dt:
+            b.setlastForce(force)
         zeta = 2 * sqrt(nodeMass / b.getConstants()[1])
-        start.setVelocity(start.getVelocity() + force * dt / nodeMass - 0.5 * zeta * norm(start.getVelocity()) * mag(
-            start.getVelocity() - end.getVelocity()) * dt / nodeMass)
-        end.setVelocity(end.getVelocity() - force * dt / nodeMass - 0.5 * zeta * norm(end.getVelocity()) * mag(
-            end.getVelocity() - start.getVelocity()) * dt / nodeMass)
+        start.setVelocity(start.getVelocity() + 0.5 * dt * (
+                b.getlastForce() - 0.5 * zeta * norm(start.getVelocity()) * mag(
+            start.getVelocity() - end.getVelocity()) / nodeMass))
+        start.setVelocity(start.getVelocity() + 0.5 * dt * (force - 0.5 * zeta * norm(start.getVelocity()) * mag(
+            start.getVelocity() - end.getVelocity())) / nodeMass)
+        end.setVelocity(end.getVelocity() - 0.5 * dt * (b.getlastForce() + 0.5 * zeta * norm(end.getVelocity()) * mag(
+            end.getVelocity() - start.getVelocity())) / nodeMass)
+        end.setVelocity(end.getVelocity() - 0.5 * dt * (force + 0.5 * zeta * norm(end.getVelocity()) * mag(
+            end.getVelocity() - start.getVelocity()) / nodeMass))
+        b.setlastForce(force)
 
         #
         # Breakage modelling
         #
-        # if springStretch >= 0.0001:
-        #     b.setConstants([b.getConstants()[0], b.getConstants()[1], b.getConstants()[2], True])
-        #     b.getSpring().visible = False
+        breakageThreshold = 0.0002
+        if springStretch >= breakageThreshold:
+            b.setConstants([b.getConstants()[0], b.getConstants()[1], b.getConstants()[2], True])
+            b.getSpring().visible = False
 
     #
     # Image Capture
